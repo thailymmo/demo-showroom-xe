@@ -59,9 +59,10 @@ export function createStage(canvas, opt = {}) {
     camera.aspect = w / h;
     camera.fov = (opt.fov || 36) * (w / h < 0.9 ? 1.12 : 1);
     const o = opt.offset || [-0.235, 0.02];
-    if (w / h > 1.25) camera.setViewOffset(w, h, o[0] * w, o[1] * h, w, h); else camera.clearViewOffset();
+    if (w / h > 1.25 && !api.noOffset) camera.setViewOffset(w, h, o[0] * w, o[1] * h, w, h); else camera.clearViewOffset();
     camera.updateProjectionMatrix();
   };
+  api.fit = fit;
   new ResizeObserver(fit).observe(canvas);
   fit();
   controls.addEventListener("start", () => (idle = -1));
