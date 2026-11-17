@@ -1,0 +1,65 @@
+name: Quay video trang web
+
+# Quay trang AXIOM thật bằng Chrome (vẽ bằng CPU), chia nhiều job song song, rồi ghép thành MP4.
+# Chạy: Actions > "Quay video trang web" > Run workflow, hoặc: gh workflow run film.yml -f shards=20
+on:
+  workflow_dispatch:
+    inputs:
+      shards:  { description: "Số job chạy song song (tối đa 20)", default: "20" }
+      width:   { description: "Chiều rộng khung", default: "1440" }
+      height:  { description: "Chiều cao khung", default: "810" }
+      fps:     { description: "Số khung/giây gốc (video nội suy lên 30)", default: "6" }
+      scale:   { description: "Độ dài kịch bản (1 = 45 giây)", default: "1" }
+      lite:    { description: "Tắt AO/bloom cho nhanh (1 = tắt)", default: "" }
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - id: m
+        run: echo "matrix=$(python3 -c "import json; print(json.dumps(list(range(int('${{ inputs.shards }}')))))")" >> "$GITHUB_OUTPUT"
+
+  shoot:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install --no-audit --no-fund && npm run build
+      - run: cd film && npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+      - name: Quay phần khung của job này
+        run: |
+          npx vite preview --port 4173 --host 127.0.0.1 --strictPort >/tmp/preview.log 2>&1 &
+          sleep 4
+          mkdir -p dist/video && ffmpeg -y -loglevel error -i dist/video/drive.mp4 -c:v libvpx-vp9 -b:v 0 -crf 34 -an dist/video/drive.webm
+          cd film
+          FPS=${{ inputs.fps }} WIDTH=${{ inputs.width }} HEIGHT=${{ inputs.height }} SCALE=${{ inputs.scale }} LITE=${{ inputs.lite }} OUT=../frames \
+            node tour.mjs ${{ matrix.shard }} ${{ inputs.shards }} 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frames-${{ matrix.shard }}
+          path: frames
+          retention-days: 1
+
+  assemble:
+    needs: shoot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { pattern: "frames-*", path: all, merge-multiple: true }
+      - name: Ghép video (nâng 1080p, nội suy 30 khung/giây)
+        run: |
+          ls all | wc -l
+          ffmpeg -y -loglevel error -framerate ${{ inputs.fps }} -i all/%04d.jpg \
+            -vf "scale=1920:1080:flags=lanczos,minterpolate=fps=30:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,format=yuv420p" \
+            -c:v libx264 -preset slow -crf 18 -movflags +faststart -an axiom-website.mp4
+      - uses: actions/upload-artifact@v4
+        with: { name: axiom-website-video, path: axiom-website.mp4, retention-days: 7 }
