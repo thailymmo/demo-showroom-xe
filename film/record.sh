@@ -8,6 +8,7 @@ export WIDTH=${WIDTH:-1920} HEIGHT=${HEIGHT:-1080} FPS=${FPS:-15} SCALE=${SCALE:
 WORKERS=${WORKERS:-4}; PORT=${PORT:-4173}; export URL=http://127.0.0.1:$PORT
 [ -d node_modules ] || npm install --no-audit --no-fund
 npm run build
+mkdir -p dist/video && ffmpeg -y -loglevel error -i dist/video/drive.mp4 -c:v libvpx-vp9 -b:v 0 -crf 34 -an dist/video/drive.webm
 (cd film && [ -d node_modules ] || npm install --no-audit --no-fund && npx playwright install --with-deps chromium)
 npx vite preview --port $PORT --host 127.0.0.1 --strictPort >/dev/null 2>&1 &
 SRV=$!; trap "kill $SRV 2>/dev/null" EXIT; sleep 3

@@ -1,6 +1,7 @@
 // AXIOM One: mô hình xe thật (CarConcept, CC-BY 4.0) + HDRI studio + sàn gương + hậu kỳ (AO, bloom)
 import { createStage, THREE, gsap, lerp, clamp } from "./stage.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -39,7 +40,7 @@ export function createScene(canvas, opt = {}) {
   const car = new THREE.Group(); scene.add(car);
   const paintMats = [], paint2 = [];
   const mats = {};
-  const carReady = new GLTFLoader().loadAsync("/models/car.glb").then((gltf) => {
+  const carReady = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync("/models/car.glb").then((gltf) => {
     const g = gltf.scene;
     g.traverse((o) => { if (o.isMesh && o.name && /plate/i.test(o.name)) o.visible = false;
       if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; const m = o.material; mats[m.name] = m; if (m.name === "Paint 1 Carmine") paintMats.push(m); if (m.name === "Paint 2 Carmine") paint2.push(m); } });

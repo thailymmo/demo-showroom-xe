@@ -84,7 +84,7 @@ fetch("/ai/manifest.json").then((r) => (r.ok ? r.json() : null)).catch(() => nul
   const g = cv.getContext("2d"), N = 72, frames = new Array(N);
   let cur = 0, loaded = 0;
   const draw = (i) => { const im = frames[i] || frames.find((x) => x?.complete && x.naturalWidth); if (im && im.naturalWidth) g.drawImage(im, 0, 0, cv.width, cv.height); };
-  const load = () => { for (let i = 0; i < N; i++) { const im = new Image(); im.src = `/img/render/seq/${String(i).padStart(3, "0")}.jpg`; im.onload = () => { loaded++; if (i === cur || loaded === 1) draw(cur); }; frames[i] = im; } };
+  const load = () => { for (let i = 0; i < N; i++) { const im = new Image(); im.src = `/img/render/seq/${String(i).padStart(3, "0")}.webp`; im.onload = () => { loaded++; if (i === cur || loaded === 1) draw(cur); }; frames[i] = im; } };
   new IntersectionObserver((es, io) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); load(); } }, { rootMargin: "150% 0px" }).observe($(".tt"));
   const bar = $(".ttb i");
   ScrollTrigger.create({ trigger: ".tt", start: "top top", end: "bottom bottom", scrub: true, onUpdate: (st) => { const i = Math.min(N - 1, Math.floor(st.progress * N)); bar.style.width = st.progress * 100 + "%"; if (i !== cur) { cur = i; draw(i); } }, onEnter: () => (cvs.style.display = "none"), onLeaveBack: () => (cvs.style.display = "block") });
