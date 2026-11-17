@@ -96,11 +96,11 @@ fetch("/ai/manifest.json").then((r) => (r.ok ? r.json() : null)).catch(() => nul
 /* ───────── Buồng lái: nhìn quanh bằng chuột, cuộn để tăng tốc ───────── */
 (() => {
   const sec = $(".cab"); if (!sec) return;
-  let active = false, sp = 0, yawT = 0, pitchT = 0, yaw = 0, pitch = 0;
+  let cabP = 0, active = false, sp = 0, yawT = 0, pitchT = 0, yaw = 0, pitch = 0;
   addEventListener("pointermove", (e) => { yawT = ((e.clientX / innerWidth) - 0.5) * 0.9; pitchT = -((e.clientY / innerHeight) - 0.5) * 0.35; });
   const v = $("#cabv");
-  ScrollTrigger.create({ trigger: ".cab", start: "top top", end: "bottom bottom", onToggle: (st) => { active = st.isActive; if (active) mode = "cab"; else { mode = "hero"; car.cockpitOff(); } }, onUpdate: (st) => { const p = st.progress; sp = Math.round(Math.min(1, p * 1.15) ** 1.4 * 240); v.textContent = sp; } });
-  car.onFrame((dt) => { if (!active) return; yaw += (yawT - yaw) * Math.min(1, dt * 4); pitch += (pitchT - pitch) * Math.min(1, dt * 4); car.cockpit(sp, yaw, pitch); });
+  ScrollTrigger.create({ trigger: ".cab", start: "top top", end: "bottom bottom", onToggle: (st) => { active = st.isActive; if (active) mode = "cab"; else { mode = "hero"; car.cockpitOff(); } }, onUpdate: (st) => { const p = st.progress; cabP = p; sp = Math.round(Math.min(1, p * 1.15) ** 1.4 * 240); v.textContent = sp; } });
+  car.onFrame((dt) => { if (!active) return; yaw += (yawT - yaw) * Math.min(1, dt * 4); pitch += (pitchT - pitch) * Math.min(1, dt * 4); car.cockpit(sp, yaw, pitch, Math.min(1, cabP * 3)); });
 })();
 
 /* video xe chạy: chỉ nạp khi cuộn tới, nếu có file */

@@ -104,16 +104,49 @@ export function createScene(canvas, opt = {}) {
     hg.font = "600 30px Space Grotesk, sans-serif"; hg.fillText("RẼ PHẢI SAU 300 M", 512, 490);
     hudTex.needsUpdate = true;
   }
-  let clMesh = null, hudMesh = null;
+  // màn hình giữa (kiểu Tesla/Lucid): bản đồ dẫn đường + nhạc + điều hoà
+  const cs = document.createElement("canvas"); cs.width = 640; cs.height = 400; const csg = cs.getContext("2d");
+  const csTex = new THREE.CanvasTexture(cs); csTex.colorSpace = THREE.SRGBColorSpace; csTex.anisotropy = 4;
+  function drawCenter() {
+    const w = 640, h = 400, t = cab.t;
+    csg.fillStyle = "#06090e"; csg.fillRect(0, 0, w, h);
+    // bản đồ
+    csg.save(); csg.beginPath(); csg.roundRect(14, 14, 400, 372, 18); csg.clip();
+    csg.fillStyle = "#0d1621"; csg.fillRect(0, 0, w, h);
+    csg.strokeStyle = "#1c2b3d"; csg.lineWidth = 2;
+    for (let i = -3; i < 12; i++) { csg.beginPath(); csg.moveTo(i * 60 + (t * 14) % 60, 0); csg.lineTo(i * 60 + 140 + (t * 14) % 60, 400); csg.stroke(); }
+    for (let i = 0; i < 8; i++) { csg.beginPath(); csg.moveTo(0, i * 56 + 10); csg.lineTo(420, i * 56 - 30); csg.stroke(); }
+    csg.strokeStyle = "#00e5ff"; csg.lineWidth = 9; csg.lineCap = "round"; csg.lineJoin = "round";
+    csg.beginPath(); csg.moveTo(214, 380); csg.lineTo(214, 270); csg.lineTo(300, 200); csg.lineTo(300, 90); csg.lineTo(380, 40); csg.stroke();
+    csg.fillStyle = "#ff3b3b"; csg.beginPath(); csg.moveTo(214, 336 - ((t * 40) % 60)); csg.lineTo(200, 366 - ((t * 40) % 60)); csg.lineTo(228, 366 - ((t * 40) % 60)); csg.fill();
+    csg.restore();
+    csg.fillStyle = "#ffffff"; csg.font = "700 26px Space Grotesk, sans-serif"; csg.fillText("Rẽ phải sau 300 m", 28, 56);
+    csg.fillStyle = "#8fb4c8"; csg.font = "500 20px Space Grotesk, sans-serif"; csg.fillText("Đường Nguyễn Huệ · 12 phút", 28, 84);
+    // nhạc
+    csg.fillStyle = "#101a26"; csg.beginPath(); csg.roundRect(430, 14, 196, 180, 18); csg.fill();
+    const gr = csg.createLinearGradient(446, 30, 610, 120); gr.addColorStop(0, "#ff3b3b"); gr.addColorStop(1, "#7a1fd1"); csg.fillStyle = gr; csg.beginPath(); csg.roundRect(446, 30, 164, 92, 12); csg.fill();
+    csg.fillStyle = "#fff"; csg.font = "700 20px Outfit, sans-serif"; csg.fillText("Midnight Drive", 446, 150); csg.fillStyle = "#8fb4c8"; csg.font = "500 16px Space Grotesk, sans-serif"; csg.fillText("AXIOM Radio", 446, 172);
+    // điều hoà
+    csg.fillStyle = "#101a26"; csg.beginPath(); csg.roundRect(430, 206, 196, 180, 18); csg.fill();
+    csg.fillStyle = "#fff"; csg.font = "800 54px Outfit, sans-serif"; csg.fillText("21°", 450, 272); csg.fillStyle = "#8fb4c8"; csg.font = "600 16px Space Grotesk, sans-serif"; csg.fillText("TỰ ĐỘNG", 450, 298);
+    for (let i = 0; i < 5; i++) { csg.fillStyle = i < 3 ? "#00e5ff" : "#ffffff22"; csg.fillRect(450 + i * 34, 330, 26, 10); }
+    csTex.needsUpdate = true;
+  }
+  // trời hoàng hôn phía ngoài kính chắn gió
+  const skyTex = (() => { const k = document.createElement("canvas"); k.width = 16; k.height = 512; const g = k.getContext("2d"); const gr = g.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, "#0b1030"); gr.addColorStop(0.45, "#3a2a5e"); gr.addColorStop(0.62, "#ff7a50"); gr.addColorStop(0.7, "#ffd9a0"); gr.addColorStop(0.72, "#2a1c30"); gr.addColorStop(1, "#06070a"); g.fillStyle = gr; g.fillRect(0, 0, 16, 512); const t = new THREE.CanvasTexture(k); t.colorSpace = THREE.SRGBColorSpace; t.mapping = THREE.EquirectangularReflectionMapping; return t; })();
+  const darkBg = new THREE.Color("#06070a");
+  let clMesh = null, hudMesh = null, csMesh = null;
   function buildCockpit(g) {
     const m = new THREE.MeshBasicMaterial({ map: clTex, toneMapped: false });
     clMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.15), m);
     clMesh.position.set(1.06, 0.985, DRIVER_Z); clMesh.rotation.set(0, -Math.PI / 2, 0); clMesh.rotation.z = 0; car.add(clMesh);
     hudMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.35), new THREE.MeshBasicMaterial({ map: hudTex, transparent: true, depthWrite: false, toneMapped: true, blending: THREE.AdditiveBlending, opacity: 0.55 }));
     hudMesh.position.set(2.3, 1.22, DRIVER_Z); hudMesh.rotation.set(0, -Math.PI / 2, 0); car.add(hudMesh);
-    drawCluster(); drawHud();
+    csMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.213), new THREE.MeshBasicMaterial({ map: csTex, toneMapped: false }));
+    csMesh.position.set(1.1, 0.9, 0.12); csMesh.rotation.set(-0.15, -Math.PI / 2 + 0.2, 0); car.add(csMesh);
+    drawCluster(); drawHud(); drawCenter();
   }
-  S.onFrame((dt, t) => { scene.environmentIntensity = cab.on ? 1.7 : 0.9; if (!cab.on) return; cab.t = t; drawCluster(); drawHud(); });
+  S.onFrame((dt, t) => { scene.environmentIntensity = cab.on ? 1.7 : 0.9; scene.background = cab.on ? skyTex : darkBg; if (!cab.on) return; cab.t = t; drawCluster(); drawHud(); drawCenter(); });
 
   // hậu kỳ
   const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: 4 }));
@@ -143,12 +176,14 @@ export function createScene(canvas, opt = {}) {
       }
     },
     /** chế độ ngồi trong buồng lái: speed 0..260, yaw/pitch (rad) do người xem rê chuột */
-    cockpit(speed, yaw, pitch) {
+    cockpit(speed, yaw, pitch, view = 1) {
       cab.on = true; cab.speed = speed; st.scroll = 2; S.controls.enabled = false;
-      cam.position.set(0.18 + yaw * 0.04, 1.16 + pitch * 0.02, DRIVER_Z);
-      // hướng nhìn: về phía đồng hồ, hơi chúc xuống; rê chuột lệch trái/phải, lên/xuống
+      const e = view * view * (3 - 2 * view);
+      const pA = new THREE.Vector3(0.45, 1.12, 0.5), pB = new THREE.Vector3(0.18 + yaw * 0.04, 1.16 + pitch * 0.02, DRIVER_Z);
+      cam.position.lerpVectors(pA, pB, e);
       const dir = new THREE.Vector3(Math.cos(yaw) * Math.cos(pitch), -0.13 + Math.sin(pitch), Math.sin(yaw) * Math.cos(pitch)).normalize();
-      tgt.copy(cam.position).addScaledVector(dir, 3); cam.fov = 58; cam.updateProjectionMatrix(); cam.lookAt(tgt);
+      const tB = pB.clone().addScaledVector(dir, 3), tA = new THREE.Vector3(1.0, 0.98, -0.2);
+      tgt.lerpVectors(tA, tB, e); cam.fov = lerp(52, 58, e); cam.updateProjectionMatrix(); cam.lookAt(tgt);
     },
     cockpitOff() { cab.on = false; },
     debug(c) { st.scroll = 1; S.controls.enabled = false; cam.position.set(c[0], c[1], c[2]); tgt.set(c[3], c[4], c[5]); cam.lookAt(tgt); cam.fov = c[6] || 27; cam.updateProjectionMatrix(); },
