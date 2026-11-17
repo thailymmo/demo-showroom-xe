@@ -11,6 +11,7 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 
 export const PAINTS = { rouge: "#a3101c", pearl: "#d9d7d0", midnight: "#0c0f16", blue: "#1b44c8", sage: "#5d7257", copper: "#a85b2e" };
 const LEN = 4.7;
+const DRIVER_Z = -0.38;
 
 export function createScene(canvas, opt = {}) {
   const S = createStage(canvas, { ...opt, fov: 27, home: { pos: [7, 1.6, 8.5], look: [0, 0.6, 0] }, minD: 4, maxD: 16, minPol: 0.9, maxPol: 1.56, idle: 0, offset: opt.offset || [-0.2, 0.03], env: 1.0, maxDpr: opt.maxDpr || 2 });
@@ -27,7 +28,7 @@ export function createScene(canvas, opt = {}) {
   const warm = new THREE.SpotLight("#ff7a50", 60, 30, 0.8, 0.9, 1.4); warm.position.set(6, 2, -6); warm.target.position.set(0, 0.5, 0); scene.add(warm, warm.target);
 
   // sàn gương + lớp mờ dần ra xa
-  const mirror = new Reflector(new THREE.CircleGeometry(14, 64), { color: 0x2a2a2e, textureWidth: 1024, textureHeight: 1024, clipBias: 0.003 });
+  const mirror = new Reflector(new THREE.CircleGeometry(14, 64), { color: 0x2a2a2e, textureWidth: new URLSearchParams(location.search).has("lite") ? 512 : 1024, textureHeight: new URLSearchParams(location.search).has("lite") ? 512 : 1024, clipBias: 0.003 });
   mirror.rotation.x = -Math.PI / 2; scene.add(mirror);
   const fadeTex = (() => { const k = document.createElement("canvas"); k.width = k.height = 512; const g = k.getContext("2d"); const gr = g.createRadialGradient(256, 256, 40, 256, 256, 256); gr.addColorStop(0, "rgba(6,7,10,0.35)"); gr.addColorStop(0.5, "rgba(6,7,10,0.8)"); gr.addColorStop(1, "rgba(6,7,10,1)"); g.fillStyle = gr; g.fillRect(0, 0, 512, 512); return new THREE.CanvasTexture(k); })();
   const veil = new THREE.Mesh(new THREE.CircleGeometry(14, 64).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: fadeTex, transparent: true, depthWrite: false })); veil.position.y = 0.004; veil.renderOrder = 2; scene.add(veil);
@@ -54,6 +55,11 @@ export function createScene(canvas, opt = {}) {
     let hx = 0, n = 0; g.traverse((o) => { if (o.isMesh && o.material.name === "Headlight") { const p = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()); hx += p.x; n++; } });
     if (n && hx / n < 0) { g.rotation.y += Math.PI; g.updateMatrixWorld(true); const b2 = new THREE.Box3().setFromObject(g), c2 = b2.getCenter(new THREE.Vector3()); g.position.x -= c2.x; g.position.z -= c2.z; }
     car.add(g);
+    // xe gốc đặt vô-lăng ở chính giữa: dời cụm lái sang trước ghế bên trái (tay lái thuận) cho ra xe hai chỗ
+    g.updateMatrixWorld(true);
+    const moved = [];
+    g.traverse((o) => { if (/^InteriorSteering/.test(o.name)) { let a = o.parent, skip = false; while (a && a !== g) { if (/^InteriorSteering/.test(a.name)) skip = true; a = a.parent; } if (!skip) moved.push(o); } });
+    moved.forEach((o) => { const wp = new THREE.Vector3(); o.getWorldPosition(wp); wp.z += DRIVER_Z; o.parent.worldToLocal(wp); o.position.copy(wp); });
     buildCockpit(g);
     if (mats["Glass"]) { mats["Glass"].envMapIntensity = 1.5; }
   });
@@ -102,9 +108,9 @@ export function createScene(canvas, opt = {}) {
   function buildCockpit(g) {
     const m = new THREE.MeshBasicMaterial({ map: clTex, toneMapped: false });
     clMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.15), m);
-    clMesh.position.set(1.06, 0.985, 0); clMesh.rotation.set(0, -Math.PI / 2, 0); clMesh.rotation.z = 0; car.add(clMesh);
+    clMesh.position.set(1.06, 0.985, DRIVER_Z); clMesh.rotation.set(0, -Math.PI / 2, 0); clMesh.rotation.z = 0; car.add(clMesh);
     hudMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.35), new THREE.MeshBasicMaterial({ map: hudTex, transparent: true, depthWrite: false, toneMapped: true, blending: THREE.AdditiveBlending, opacity: 0.55 }));
-    hudMesh.position.set(2.3, 1.22, 0); hudMesh.rotation.set(0, -Math.PI / 2, 0); car.add(hudMesh);
+    hudMesh.position.set(2.3, 1.22, DRIVER_Z); hudMesh.rotation.set(0, -Math.PI / 2, 0); car.add(hudMesh);
     drawCluster(); drawHud();
   }
   S.onFrame((dt, t) => { scene.environmentIntensity = cab.on ? 1.7 : 0.9; if (!cab.on) return; cab.t = t; drawCluster(); drawHud(); });
@@ -115,7 +121,9 @@ export function createScene(canvas, opt = {}) {
   const gtao = new GTAOPass(scene, camera, 2, 2);
   gtao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.3, thickness: 1, scale: 1, samples: 16 }); gtao.blendIntensity = 0.85;
   composer.addPass(gtao);
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(2, 2), 0.16, 0.5, 0.97));
+  const bloomPass = new UnrealBloomPass(new THREE.Vector2(2, 2), 0.16, 0.5, 0.97);
+  composer.addPass(bloomPass);
+  if (new URLSearchParams(location.search).has("lite")) { gtao.enabled = false; bloomPass.enabled = false; }
   composer.addPass(new OutputPass());
   S.composer = composer;
 
@@ -137,7 +145,7 @@ export function createScene(canvas, opt = {}) {
     /** chế độ ngồi trong buồng lái: speed 0..260, yaw/pitch (rad) do người xem rê chuột */
     cockpit(speed, yaw, pitch) {
       cab.on = true; cab.speed = speed; st.scroll = 2; S.controls.enabled = false;
-      cam.position.set(0.18 + yaw * 0.04, 1.16 + pitch * 0.02, 0);
+      cam.position.set(0.18 + yaw * 0.04, 1.16 + pitch * 0.02, DRIVER_Z);
       // hướng nhìn: về phía đồng hồ, hơi chúc xuống; rê chuột lệch trái/phải, lên/xuống
       const dir = new THREE.Vector3(Math.cos(yaw) * Math.cos(pitch), -0.13 + Math.sin(pitch), Math.sin(yaw) * Math.cos(pitch)).normalize();
       tgt.copy(cam.position).addScaledVector(dir, 3); cam.fov = 58; cam.updateProjectionMatrix(); cam.lookAt(tgt);
@@ -151,9 +159,9 @@ export function createScene(canvas, opt = {}) {
       if (p <= 0.8) { cam.fov = 27; cam.updateProjectionMatrix(); place(ang, rad, h); return; }
       // bay vào khoang lái
       const t = clamp((p - 0.8) / 0.2, 0, 1), e = t * t * (3 - 2 * t);
-      const p0 = new THREE.Vector3(Math.cos(ang) * rad, h, Math.sin(ang) * rad), p1 = new THREE.Vector3(0.18, 1.1, 0);
+      const p0 = new THREE.Vector3(Math.cos(ang) * rad, h, Math.sin(ang) * rad), p1 = new THREE.Vector3(0.18, 1.1, DRIVER_Z);
       cam.position.lerpVectors(p0, p1, e);
-      tgt.lerpVectors(new THREE.Vector3(0, 0.55, 0), new THREE.Vector3(3.2, 0.85, 0), e);
+      tgt.lerpVectors(new THREE.Vector3(0, 0.55, 0), new THREE.Vector3(3.2, 0.85, DRIVER_Z), e);
       cam.fov = lerp(27, 58, e); cam.updateProjectionMatrix(); cam.lookAt(tgt);
     },
   });

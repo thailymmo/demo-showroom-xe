@@ -10,7 +10,7 @@ gsap.registerPlugin(ScrollTrigger);
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-if (!reduce) {
+if (!reduce && !new URLSearchParams(location.search).has("film")) {
   const lenis = new Lenis({ lerp: 0.09 });
   lenis.on("scroll", ScrollTrigger.update);
   gsap.ticker.add((t) => lenis.raf(t * 1000));
@@ -108,7 +108,7 @@ fetch("/ai/manifest.json").then((r) => (r.ok ? r.json() : null)).catch(() => nul
   const v = $("#drvv"); if (!v) return;
   fetch("/video/drive.mp4", { method: "HEAD" }).then((r) => {
     if (!r.ok) { $("#chay-that")?.remove(); return; }
-    v.src = "/video/drive.mp4";
+    v.src = new URLSearchParams(location.search).has("film") ? "/video/drive.webm" : "/video/drive.mp4";
     new IntersectionObserver(([e]) => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); }, { threshold: 0.25 }).observe(v);
   }).catch(() => $("#chay-that")?.remove());
 })();
