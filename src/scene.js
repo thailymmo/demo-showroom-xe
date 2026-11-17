@@ -4,17 +4,17 @@ import { createStage, THREE, gsap, lerp, clamp } from "./stage.js";
 export const PAINTS = { rouge: "#b3121f", pearl: "#ecebe6", midnight: "#10131a", blue: "#1f4fd8", sage: "#6a7d62", copper: "#b0663a" };
 
 export function createScene(canvas, opt = {}) {
-  const S = createStage(canvas, { ...opt, fov: 28, home: { pos: [6.5, 1.7, 7.5], look: [0, 0.65, 0] }, minD: 4, maxD: 14, minPol: 1.0, maxPol: 1.55, idle: 0, offset: opt.offset || [-0.2, 0.03], env: 0.9 });
+  const S = createStage(canvas, { ...opt, fov: 28, home: { pos: [6.5, 1.7, 7.5], look: [0, 0.65, 0] }, minD: 4, maxD: 14, minPol: 1.0, maxPol: 1.55, idle: 0, offset: opt.offset || [-0.2, 0.03], env: 0.5 });
   const { scene, renderer } = S;
   renderer.toneMappingExposure = 1.05;
   // ánh sáng showroom
   const spot = new THREE.SpotLight("#ffffff", 150, 30, 0.45, 0.8, 1.5); spot.position.set(2, 9, 3); spot.target.position.set(0, 0.5, 0); spot.castShadow = true; spot.shadow.mapSize.set(2048, 2048); spot.shadow.bias = -0.0003; scene.add(spot, spot.target);
-  const rimL = new THREE.SpotLight("#7aa2ff", 55, 30, 0.6, 0.9, 1.4); rimL.position.set(-7, 4, -5); rimL.target.position.set(0, 0.6, 0); scene.add(rimL, rimL.target);
+  const rimL = new THREE.SpotLight("#7aa2ff", 30, 30, 0.6, 0.9, 1.4); rimL.position.set(-7, 4, -5); rimL.target.position.set(0, 0.6, 0); scene.add(rimL, rimL.target);
   const warmL = new THREE.PointLight("#ff6a4a", 12, 14, 1.6); warmL.position.set(5, 1, -4); scene.add(warmL);
   const hemi = new THREE.HemisphereLight("#9fb4ff", "#151922", 0.35); scene.add(hemi);
   scene.fog = new THREE.FogExp2('#06070a', 0.028);
   // sàn
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 96).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#07080b", roughness: 0.5, metalness: 0.2 })); floor.receiveShadow = true; scene.add(floor);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 96).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#050608", roughness: 1, metalness: 0 })); floor.receiveShadow = true; scene.add(floor);
   const ring = new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.025, 8, 160).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: "#ffffff", toneMapped: false })); ring.position.y = 0.01; scene.add(ring);
   const ring2 = new THREE.Mesh(new THREE.TorusGeometry(5.2, 0.015, 8, 160).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: "#ffffff", toneMapped: false, transparent: true, opacity: 0.4 })); ring2.position.y = 0.01; scene.add(ring2);
 
