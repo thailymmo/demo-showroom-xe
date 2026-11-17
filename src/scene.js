@@ -54,8 +54,60 @@ export function createScene(canvas, opt = {}) {
     let hx = 0, n = 0; g.traverse((o) => { if (o.isMesh && o.material.name === "Headlight") { const p = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()); hx += p.x; n++; } });
     if (n && hx / n < 0) { g.rotation.y += Math.PI; g.updateMatrixWorld(true); const b2 = new THREE.Box3().setFromObject(g), c2 = b2.getCenter(new THREE.Vector3()); g.position.x -= c2.x; g.position.z -= c2.z; }
     car.add(g);
+    buildCockpit(g);
     if (mats["Glass"]) { mats["Glass"].envMapIntensity = 1.5; }
   });
+
+  // ── buồng lái: đồng hồ kỹ thuật số + HUD vẽ bằng canvas ──
+  const cl = document.createElement("canvas"); cl.width = 1024; cl.height = 360; const cg = cl.getContext("2d");
+  const clTex = new THREE.CanvasTexture(cl); clTex.colorSpace = THREE.SRGBColorSpace; clTex.anisotropy = 4;
+  const hud = document.createElement("canvas"); hud.width = 1024; hud.height = 512; const hg = hud.getContext("2d");
+  const hudTex = new THREE.CanvasTexture(hud); hudTex.colorSpace = THREE.SRGBColorSpace;
+  const cab = { speed: 0, yaw: 0, pitch: 0, on: false, t: 0 };
+  function drawCluster() {
+    const w = 1024, h = 360, sp = Math.round(cab.speed), t = cab.t;
+    cg.clearRect(0, 0, w, h); cg.fillStyle = "#070b10"; cg.fillRect(0, 0, w, h);
+    const grd = cg.createLinearGradient(0, 0, w, 0); grd.addColorStop(0, "#00e5ff22"); grd.addColorStop(1, "#ff3b3b22"); cg.fillStyle = grd; cg.fillRect(0, 0, w, h);
+    // vòng tốc độ
+    cg.lineWidth = 16; cg.lineCap = "round";
+    cg.strokeStyle = "#ffffff18"; cg.beginPath(); cg.arc(250, 190, 130, Math.PI * 0.8, Math.PI * 2.2); cg.stroke();
+    cg.strokeStyle = "#00e5ff"; cg.beginPath(); cg.arc(250, 190, 130, Math.PI * 0.8, Math.PI * (0.8 + 1.4 * Math.min(1, sp / 260))); cg.stroke();
+    cg.fillStyle = "#fff"; cg.font = "800 120px Outfit, sans-serif"; cg.textAlign = "center"; cg.fillText(String(sp), 250, 222);
+    cg.fillStyle = "#8fb4c8"; cg.font = "600 26px Space Grotesk, sans-serif"; cg.fillText("KM/H", 250, 262);
+    // công suất + pin
+    cg.textAlign = "left"; cg.fillStyle = "#8fb4c8"; cg.font = "600 24px Space Grotesk, sans-serif"; cg.fillText("CÔNG SUẤT", 470, 80);
+    const pw = Math.max(0, Math.min(1, sp / 200)); cg.fillStyle = "#ffffff18"; cg.fillRect(470, 96, 340, 18); cg.fillStyle = pw > 0.8 ? "#ff3b3b" : "#00e5ff"; cg.fillRect(470, 96, 340 * pw, 18);
+    cg.fillStyle = "#fff"; cg.font = "700 56px Outfit, sans-serif"; cg.fillText(Math.round(640 * pw) + " HP", 470, 178);
+    cg.fillStyle = "#8fb4c8"; cg.font = "600 24px Space Grotesk, sans-serif"; cg.fillText("PIN", 470, 232); cg.fillStyle = "#ffffff18"; cg.fillRect(470, 246, 340, 18); cg.fillStyle = "#7dff9a"; cg.fillRect(470, 246, 340 * (0.82 - sp / 2000), 18);
+    cg.fillStyle = "#fff"; cg.font = "700 40px Outfit, sans-serif"; cg.fillText("512 km", 470, 312);
+    // số D + nhiệt
+    cg.textAlign = "right"; cg.fillStyle = "#ff3b3b"; cg.font = "800 96px Outfit, sans-serif"; cg.fillText("D", 970, 120);
+    cg.fillStyle = "#8fb4c8"; cg.font = "600 24px Space Grotesk, sans-serif"; cg.fillText("EV · SPORT", 970, 170);
+    cg.fillStyle = "#fff"; cg.font = "600 36px Space Grotesk, sans-serif"; cg.fillText("21°C", 970, 300);
+    clTex.needsUpdate = true;
+  }
+  function drawHud() {
+    const w = 1024, h = 512, sp = Math.round(cab.speed), t = cab.t;
+    hg.clearRect(0, 0, w, h);
+    hg.textAlign = "center"; hg.fillStyle = "#66e8d4"; hg.shadowColor = "#00c8b0"; hg.shadowBlur = 14;
+    hg.font = "800 150px Outfit, sans-serif"; hg.fillText(String(sp), 512, 190);
+    hg.font = "600 34px Space Grotesk, sans-serif"; hg.fillText("KM/H", 512, 240);
+    // mũi tên dẫn đường nhấp nháy
+    hg.strokeStyle = "#7dffea"; hg.lineWidth = 14; hg.lineJoin = "round"; hg.globalAlpha = 0.55 + 0.45 * Math.sin(t * 5);
+    hg.beginPath(); hg.moveTo(512, 440); hg.lineTo(512, 330); hg.moveTo(450, 380); hg.lineTo(512, 316); hg.lineTo(574, 380); hg.stroke(); hg.globalAlpha = 1;
+    hg.font = "600 30px Space Grotesk, sans-serif"; hg.fillText("RẼ PHẢI SAU 300 M", 512, 490);
+    hudTex.needsUpdate = true;
+  }
+  let clMesh = null, hudMesh = null;
+  function buildCockpit(g) {
+    const m = new THREE.MeshBasicMaterial({ map: clTex, toneMapped: false });
+    clMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.15), m);
+    clMesh.position.set(1.06, 0.985, 0); clMesh.rotation.set(0, -Math.PI / 2, 0); clMesh.rotation.z = 0; car.add(clMesh);
+    hudMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.35), new THREE.MeshBasicMaterial({ map: hudTex, transparent: true, depthWrite: false, toneMapped: true, blending: THREE.AdditiveBlending, opacity: 0.55 }));
+    hudMesh.position.set(2.3, 1.22, 0); hudMesh.rotation.set(0, -Math.PI / 2, 0); car.add(hudMesh);
+    drawCluster(); drawHud();
+  }
+  S.onFrame((dt, t) => { scene.environmentIntensity = cab.on ? 1.7 : 0.9; if (!cab.on) return; cab.t = t; drawCluster(); drawHud(); });
 
   // hậu kỳ
   const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: 4 }));
@@ -70,6 +122,7 @@ export function createScene(canvas, opt = {}) {
   const st = { scroll: null };
   const cam = S.camera, tgt = S.controls.target;
   const place = (ang, rad, h, lookY = 0.55) => { cam.position.set(Math.cos(ang) * rad, h, Math.sin(ang) * rad); tgt.set(0, lookY, 0); cam.lookAt(tgt); };
+  S.THREE = THREE;
   const api = Object.assign(S, {
     ready: Promise.all([envReady, carReady]),
     setOption(k, v) {
@@ -81,6 +134,15 @@ export function createScene(canvas, opt = {}) {
         warm.color.copy(c.clone().lerp(new THREE.Color("#ff7a50"), 0.5));
       }
     },
+    /** chế độ ngồi trong buồng lái: speed 0..260, yaw/pitch (rad) do người xem rê chuột */
+    cockpit(speed, yaw, pitch) {
+      cab.on = true; cab.speed = speed; st.scroll = 2; S.controls.enabled = false;
+      cam.position.set(0.18 + yaw * 0.04, 1.16 + pitch * 0.02, 0);
+      // hướng nhìn: về phía đồng hồ, hơi chúc xuống; rê chuột lệch trái/phải, lên/xuống
+      const dir = new THREE.Vector3(Math.cos(yaw) * Math.cos(pitch), -0.13 + Math.sin(pitch), Math.sin(yaw) * Math.cos(pitch)).normalize();
+      tgt.copy(cam.position).addScaledVector(dir, 3); cam.fov = 58; cam.updateProjectionMatrix(); cam.lookAt(tgt);
+    },
+    cockpitOff() { cab.on = false; },
     debug(c) { st.scroll = 1; S.controls.enabled = false; cam.position.set(c[0], c[1], c[2]); tgt.set(c[3], c[4], c[5]); cam.lookAt(tgt); cam.fov = c[6] || 27; cam.updateProjectionMatrix(); },
     setProgress(p) {
       st.scroll = p; S.controls.enabled = false;
@@ -89,10 +151,10 @@ export function createScene(canvas, opt = {}) {
       if (p <= 0.8) { cam.fov = 27; cam.updateProjectionMatrix(); place(ang, rad, h); return; }
       // bay vào khoang lái
       const t = clamp((p - 0.8) / 0.2, 0, 1), e = t * t * (3 - 2 * t);
-      const p0 = new THREE.Vector3(Math.cos(ang) * rad, h, Math.sin(ang) * rad), p1 = new THREE.Vector3(-0.6, 1.28, 0);
+      const p0 = new THREE.Vector3(Math.cos(ang) * rad, h, Math.sin(ang) * rad), p1 = new THREE.Vector3(0.18, 1.1, 0);
       cam.position.lerpVectors(p0, p1, e);
-      tgt.lerpVectors(new THREE.Vector3(0, 0.55, 0), new THREE.Vector3(3, 0.9, 0), e);
-      cam.fov = lerp(27, 70, e); cam.updateProjectionMatrix(); cam.lookAt(tgt);
+      tgt.lerpVectors(new THREE.Vector3(0, 0.55, 0), new THREE.Vector3(3.2, 0.85, 0), e);
+      cam.fov = lerp(27, 58, e); cam.updateProjectionMatrix(); cam.lookAt(tgt);
     },
   });
   return api;

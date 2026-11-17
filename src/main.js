@@ -18,7 +18,7 @@ if (!reduce) {
   $$('a[href^="#"]').forEach((a) => a.addEventListener("click", (e) => { const t = $(a.getAttribute("href")); if (t) { e.preventDefault(); lenis.scrollTo(t, { duration: 1.6 }); } }));
 }
 const car = createScene($("#car"));
-car.ready.then(() => { document.body.classList.add("car-ready"); car.setOption("paint", "rouge"); const q = new URLSearchParams(location.search).get("cam"); if (q) { window.__dbg = true; car.debug(q.split(",").map(Number)); } });
+car.ready.then(() => { if (new URLSearchParams(location.search).has("film")) { window.__dbg = true; window.__axiom = car; } document.body.classList.add("car-ready"); car.setOption("paint", "rouge"); const q = new URLSearchParams(location.search).get("cam"); if (q) { window.__dbg = true; car.debug(q.split(",").map(Number)); } });
 const ACC = { rouge: ["#ff3b3b", "Đỏ Rouge"], pearl: ["#e8e8e0", "Trắng Ngọc Trai"], midnight: ["#7c8cff", "Đen Midnight"], blue: ["#4f86ff", "Xanh Racing"], sage: ["#9ec58f", "Xanh Sage"], copper: ["#ff9b5e", "Đồng Copper"] };
 $("#rail").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
@@ -37,7 +37,7 @@ ScrollTrigger.create({ trigger: ".walk", start: "top top", end: "bottom bottom",
   const i = Math.min(4, Math.floor(p * 5)); wc.forEach((el, k) => el.classList.toggle("on", k === i && p > 0.02));
   car.setProgress(p);
 } });
-ScrollTrigger.create({ trigger: ".walk", start: "top 60%", end: "bottom top", onToggle: (st) => (mode = st.isActive ? "walk" : "hero") });
+ScrollTrigger.create({ trigger: ".walk", start: "top 60%", end: "bottom top", onToggle: (st) => { if (mode !== "cab") mode = st.isActive ? "walk" : "hero"; } });
 ScrollTrigger.create({ trigger: ".specs", start: "top 80%", onToggle: (st) => (cvs.style.display = st.isActive ? "none" : "block") , onLeaveBack: () => (cvs.style.display = "block") });
 /* chữ số đếm lên */
 $$("[data-n]").forEach((el) => { const to = +el.dataset.n, d = +el.dataset.d || 0, o = { v: 0 }; gsap.to(o, { v: to, duration: 2.2, delay: 0.8, ease: "power2.out", onUpdate: () => (el.textContent = o.v.toFixed(d).replace(".", ",")) }); });
@@ -92,3 +92,23 @@ fetch("/ai/manifest.json").then((r) => (r.ok ? r.json() : null)).catch(() => nul
 fetch("/ai/manifest.json").then((r) => (r.ok ? r.json() : null)).catch(() => null).then((man) => {
   if (man?.colors) $("#cols").innerHTML = man.colors.map((c) => `<figure><img src="${c.img}" alt="${c.n}" loading="lazy"><figcaption>${c.n}</figcaption></figure>`).join("");
 });
+
+/* ───────── Buồng lái: nhìn quanh bằng chuột, cuộn để tăng tốc ───────── */
+(() => {
+  const sec = $(".cab"); if (!sec) return;
+  let active = false, sp = 0, yawT = 0, pitchT = 0, yaw = 0, pitch = 0;
+  addEventListener("pointermove", (e) => { yawT = ((e.clientX / innerWidth) - 0.5) * 0.9; pitchT = -((e.clientY / innerHeight) - 0.5) * 0.35; });
+  const v = $("#cabv");
+  ScrollTrigger.create({ trigger: ".cab", start: "top top", end: "bottom bottom", onToggle: (st) => { active = st.isActive; if (active) mode = "cab"; else { mode = "hero"; car.cockpitOff(); } }, onUpdate: (st) => { const p = st.progress; sp = Math.round(Math.min(1, p * 1.15) ** 1.4 * 240); v.textContent = sp; } });
+  car.onFrame((dt) => { if (!active) return; yaw += (yawT - yaw) * Math.min(1, dt * 4); pitch += (pitchT - pitch) * Math.min(1, dt * 4); car.cockpit(sp, yaw, pitch); });
+})();
+
+/* video xe chạy: chỉ nạp khi cuộn tới, nếu có file */
+(() => {
+  const v = $("#drvv"); if (!v) return;
+  fetch("/video/drive.mp4", { method: "HEAD" }).then((r) => {
+    if (!r.ok) { $("#chay-that")?.remove(); return; }
+    v.src = "/video/drive.mp4";
+    new IntersectionObserver(([e]) => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); }, { threshold: 0.25 }).observe(v);
+  }).catch(() => $("#chay-that")?.remove());
+})();
