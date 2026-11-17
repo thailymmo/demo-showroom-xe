@@ -55,6 +55,7 @@ export function createStage(canvas, opt = {}) {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
     renderer.setSize(w, h, false);
+    if (api.composer) { api.composer.setPixelRatio(renderer.getPixelRatio()); api.composer.setSize(w, h); }
     camera.aspect = w / h;
     camera.fov = (opt.fov || 36) * (w / h < 0.9 ? 1.12 : 1);
     const o = opt.offset || [-0.235, 0.02];
@@ -78,7 +79,7 @@ export function createStage(canvas, opt = {}) {
     }
     hooks.forEach((f) => f(dt, t / 1000));
     controls.update();
-    renderer.render(scene, camera);
+    if (api.composer) api.composer.render(); else renderer.render(scene, camera);
     requestAnimationFrame(tick);
   };
   new IntersectionObserver(([e]) => { const was = running; running = e.isIntersecting; if (running && !was) { last = performance.now(); requestAnimationFrame(tick); } }).observe(canvas);

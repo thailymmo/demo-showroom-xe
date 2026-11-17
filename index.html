@@ -11,11 +11,12 @@
 </head>
 <body>
 <canvas id="car" aria-label="Xe AXIOM One 3D"></canvas>
-<header class="hd"><a class="lg" href="#top"><i></i>AXIOM</a><nav><a href="#vong">Quanh xe</a><a href="#so">Thông số</a><a href="#noi-that">Chi tiết</a><a href="#lai-thu">Lái thử</a></nav><a class="cta" href="#lai-thu">Đặt lái thử</a></header>
+<header class="hd"><a class="lg" href="#top"><i></i>AXIOM</a><nav><a href="#vong">Quanh xe</a><a href="#anh-that">Ảnh thật</a><a href="#nhin-gan">Nhìn gần</a><a href="#ai">Thiết kế AI</a><a href="#so">Thông số</a><a href="#noi-that">Chi tiết</a><a href="#lai-thu">Lái thử</a></nav><a class="cta" href="#lai-thu">Đặt lái thử</a></header>
 
 <main id="top">
 <section class="hero">
   <h1 class="ghost" aria-hidden="true">AXIOM</h1>
+  <div class="ld" id="ld"><i></i>Đang dựng xe…</div>
   <div class="hl"><p class="eb">AXIOM ONE · XE ĐIỆN THUẦN</p><h2>Sinh ra<br>để <em>lao đi.</em></h2><p class="sub">640 mã lực, 620 km một lần sạc. Thiết kế dựng từ gió, không từ catalogue.</p><a class="btn" href="#vong">Đi một vòng quanh xe ↓</a></div>
   <div class="rail" id="rail" role="radiogroup" aria-label="Màu sơn">
     <span>MÀU SƠN</span>
@@ -32,12 +33,43 @@
 
 <section class="walk" id="vong">
   <div class="pinw">
-    <div class="wc" data-i="0"><span>01 / 04</span><h3>Dấu ấn<br>ánh sáng.</h3><p>Một dải LED liền mạch chạy ngang đầu xe, vừa là đèn pha vừa là chữ ký thương hiệu.</p></div>
-    <div class="wc r" data-i="1"><span>02 / 04</span><h3>Mái kính<br>toàn cảnh.</h3><p>Đường mái kéo dài tới đuôi xe, giảm lực cản xuống 0,21 Cd, thêm 40 km quãng đường.</p></div>
-    <div class="wc" data-i="2"><span>03 / 04</span><h3>Đuôi xe<br>một nét.</h3><p>Đèn hậu một dải đỏ liền, khuếch tán gió ở cản sau, ổn định khi chạy trên 200 km/h.</p></div>
-    <div class="wc r" data-i="3"><span>04 / 04</span><h3>Mâm 21”<br>đúc liền.</h3><p>Mâm hợp kim rèn, phanh gốm tuỳ chọn, lốp 275/35 cho độ bám thể thao.</p></div>
+    <div class="wc" data-i="0"><span>01 / 05</span><h3>Dấu ấn<br>ánh sáng.</h3><p>Một dải LED liền mạch chạy ngang đầu xe, vừa là đèn pha vừa là chữ ký thương hiệu.</p></div>
+    <div class="wc r" data-i="1"><span>02 / 05</span><h3>Mái kính<br>toàn cảnh.</h3><p>Đường mái kéo dài tới đuôi xe, giảm lực cản xuống 0,21 Cd, thêm 40 km quãng đường.</p></div>
+    <div class="wc" data-i="2"><span>03 / 05</span><h3>Đuôi xe<br>một nét.</h3><p>Đèn hậu một dải đỏ liền, khuếch tán gió ở cản sau, ổn định khi chạy trên 200 km/h.</p></div>
+    <div class="wc r" data-i="3"><span>04 / 05</span><h3>Mâm 21”<br>đúc liền.</h3><p>Mâm hợp kim rèn, phanh gốm tuỳ chọn, lốp 275/35 cho độ bám thể thao.</p></div>
+    <div class="wc" data-i="4"><span>05 / 05</span><h3>Khoang lái<br>như buồng lái.</h3><p>Ghế ôm thân, ốp carbon và da đỏ may tay. Mọi nút bấm nằm trong tầm ngón cái.</p></div>
     <div class="wbar"><i></i></div>
   </div>
+</section>
+
+<section class="tt" id="anh-that">
+  <div class="ttp">
+    <canvas id="ttc" width="1280" height="720" aria-label="Ảnh render photoreal của xe, cuộn để xoay"></canvas>
+    <div class="ttv"></div>
+    <div class="ttl"><p class="eb">ẢNH DỰNG THẬT</p><h2>Mỗi khung hình<br>là một bức ảnh.</h2><p>Render bằng Blender Cycles trên GPU, 72 góc quanh xe. Cuộn để xoay.</p></div>
+    <div class="ttb"><i></i></div>
+  </div>
+</section>
+
+<section class="close" id="nhin-gan">
+  <p class="eb">NHÌN GẦN</p><h2>Từng chi tiết,<br>dựng như ảnh.</h2>
+  <div class="cg" id="cg"></div>
+  <div class="cols" id="cols"></div>
+</section>
+
+<section class="ai" id="ai">
+  <div class="aih"><p class="eb">PHÒNG THIẾT KẾ AI</p><h2>Từ một câu mô tả<br>đến một chiếc xe.</h2>
+  <p class="aip">Đội thiết kế bắt đầu bằng AI: viết một câu mô tả, nhận hàng chục concept, chọn hình dáng ưng ý và để AI dựng thành khối 3D. Kỹ sư rồi mới chỉnh bề mặt, khí động học và chi tiết.</p></div>
+  <div class="aig">
+    <div class="aiv"><canvas id="aiv" aria-label="Khối 3D do AI dựng, kéo để xoay"></canvas><div class="aivn" id="aivn">Chọn một concept bên phải</div></div>
+    <div class="aic" id="aic" role="list"></div>
+  </div>
+  <ol class="ais">
+    <li><b>01 · Mô tả</b><p>“Coupe điện dáng thấp, kính liền mái, dải LED một nét.”</p></li>
+    <li><b>02 · Concept</b><p>Mô hình ảnh sinh ra sáu phương án trong vài phút.</p></li>
+    <li><b>03 · Khối 3D</b><p>Từ ảnh được chọn, AI dựng thành lưới 3D xoay được.</p></li>
+    <li><b>04 · Kỹ sư</b><p>Tinh chỉnh bề mặt, khí động học, rồi mới đưa vào sản xuất.</p></li>
+  </ol>
 </section>
 
 <section class="specs" id="so">
@@ -61,6 +93,6 @@
   <form class="fm" onsubmit="event.preventDefault();this.querySelector('button').textContent='ĐÃ ĐẶT LỊCH LÁI THỬ ✓'"><h3>Đặt lái thử</h3><input required placeholder="Họ tên"><input required placeholder="Số điện thoại" inputmode="tel"><select><option>Showroom Hà Nội</option><option>Showroom TP.HCM</option><option>Showroom Đà Nẵng</option></select><button>Đặt lịch →</button></form>
 </section>
 </main>
-<footer class="ft"><span>© 2026 AXIOM — trang mẫu do TLHUB thiết kế · hình minh hoạ</span><span>Hotline 1900 0000</span></footer>
+<footer class="ft"><span>© 2026 AXIOM — trang mẫu do TLHUB thiết kế · mô hình xe “Car Concept” (Unity Fan, CC0 gốc) tối ưu bởi Eric Chadwick / Khronos Group, CC BY 4.0</span><span>Hotline 1900 0000</span></footer>
 </body>
 </html>
