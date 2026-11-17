@@ -100,7 +100,7 @@ fetch("/ai/manifest.json").then((r) => (r.ok ? r.json() : null)).catch(() => nul
   addEventListener("pointermove", (e) => { yawT = ((e.clientX / innerWidth) - 0.5) * 0.9; pitchT = -((e.clientY / innerHeight) - 0.5) * 0.35; });
   const v = $("#cabv");
   ScrollTrigger.create({ trigger: ".cab", start: "top top", end: "bottom bottom", onToggle: (st) => { active = st.isActive; if (active) mode = "cab"; else { mode = "hero"; car.cockpitOff(); } }, onUpdate: (st) => { const p = st.progress; cabP = p; sp = Math.round(Math.min(1, p * 1.15) ** 1.4 * 240); v.textContent = sp; } });
-  car.onFrame((dt) => { if (!active) return; yaw += (yawT - yaw) * Math.min(1, dt * 4); pitch += (pitchT - pitch) * Math.min(1, dt * 4); car.cockpit(sp, yaw, pitch, Math.min(1, cabP * 3)); });
+  car.onFrame((dt) => { if (!active) return; yaw += (yawT - yaw) * Math.min(1, dt * 4); pitch += (pitchT - pitch) * Math.min(1, dt * 4); car.cockpit(sp, yaw, pitch, Math.min(1, Math.max(0, (cabP - 0.12) * 2.4))); });
 })();
 
 /* video xe chạy: chỉ nạp khi cuộn tới, nếu có file */

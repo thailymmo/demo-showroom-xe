@@ -132,8 +132,27 @@ export function createScene(canvas, opt = {}) {
     for (let i = 0; i < 5; i++) { csg.fillStyle = i < 3 ? "#00e5ff" : "#ffffff22"; csg.fillRect(450 + i * 34, 330, 26, 10); }
     csTex.needsUpdate = true;
   }
-  // trời hoàng hôn phía ngoài kính chắn gió
-  const skyTex = (() => { const k = document.createElement("canvas"); k.width = 16; k.height = 512; const g = k.getContext("2d"); const gr = g.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, "#0b1030"); gr.addColorStop(0.45, "#3a2a5e"); gr.addColorStop(0.62, "#ff7a50"); gr.addColorStop(0.7, "#ffd9a0"); gr.addColorStop(0.72, "#2a1c30"); gr.addColorStop(1, "#06070a"); g.fillStyle = gr; g.fillRect(0, 0, 16, 512); const t = new THREE.CanvasTexture(k); t.colorSpace = THREE.SRGBColorSpace; t.mapping = THREE.EquirectangularReflectionMapping; return t; })();
+  // cảnh hoàng hôn thành phố bên ngoài kính (vẽ bằng canvas, dạng toàn cảnh)
+  const skyTex = (() => {
+    const W = 2048, H = 1024, k = document.createElement("canvas"); k.width = W; k.height = H; const g = k.getContext("2d");
+    const gr = g.createLinearGradient(0, 0, 0, H * 0.56); gr.addColorStop(0, "#1a2250"); gr.addColorStop(0.45, "#6a4a8e"); gr.addColorStop(0.75, "#ff9a62"); gr.addColorStop(1, "#ffd9a8");
+    g.fillStyle = gr; g.fillRect(0, 0, W, H * 0.56);
+    // mây
+    for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(255,${150 + (i % 5) * 20},${130 + (i % 7) * 12},${0.08 + (i % 4) * 0.03})`; g.beginPath(); g.ellipse((i * 211) % W, H * (0.16 + ((i * 37) % 22) / 100), 120 + (i % 6) * 40, 14 + (i % 4) * 6, 0, 0, 7); g.fill(); }
+    // toà nhà đường chân trời
+    let seed = 3; const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let x = 0; x < W; x += 5 + r() * 9) { const w = 5 + r() * 13, h = 14 + r() * 62 * (r() > 0.88 ? 1.8 : 1); g.fillStyle = r() > 0.5 ? "#2a2342" : "#1f1a36"; g.fillRect(x, H * 0.56 - h, w, h);
+      for (let y = H * 0.56 - h + 3; y < H * 0.56 - 3; y += 4.5) for (let xx = x + 1.5; xx < x + w - 1.5; xx += 3.5) if (r() > 0.6) { g.fillStyle = r() > 0.5 ? "#ffd9a0" : "#9ad8ff"; g.fillRect(xx, y, 1.6, 2.2); } }
+    // sương mù nhẹ ở chân trời cho có chiều sâu
+    const hz = g.createLinearGradient(0, H * 0.4, 0, H * 0.6); hz.addColorStop(0, "rgba(255,170,110,0)"); hz.addColorStop(0.7, "rgba(255,190,140,0.32)"); hz.addColorStop(1, "rgba(255,190,140,0)"); g.fillStyle = hz; g.fillRect(0, H * 0.4, W, H * 0.2);
+    // mặt đường + hàng cây hai bên
+    const rd = g.createLinearGradient(0, H * 0.56, 0, H); rd.addColorStop(0, "#3a2c44"); rd.addColorStop(1, "#0b0b12"); g.fillStyle = rd; g.fillRect(0, H * 0.56, W, H * 0.44);
+    g.fillStyle = "#0f1a14"; for (let x = 0; x < W; x += 18 + r() * 16) { g.beginPath(); g.arc(x, H * 0.56, 11 + r() * 12, 0, 7); g.fill(); }
+    // đèn đường phát sáng
+    for (let x = 20; x < W; x += 56) { g.fillStyle = "#ffe2a8"; g.shadowColor = "#ffb85a"; g.shadowBlur = 16; g.beginPath(); g.arc(x, H * 0.535, 2.4, 0, 7); g.fill(); }
+    g.shadowBlur = 0;
+    const t = new THREE.CanvasTexture(k); t.colorSpace = THREE.SRGBColorSpace; t.mapping = THREE.EquirectangularReflectionMapping; return t;
+  })();
   const darkBg = new THREE.Color("#06070a");
   let clMesh = null, hudMesh = null, csMesh = null;
   function buildCockpit(g) {
@@ -144,6 +163,9 @@ export function createScene(canvas, opt = {}) {
     hudMesh.position.set(2.3, 1.22, DRIVER_Z); hudMesh.rotation.set(0, -Math.PI / 2, 0); car.add(hudMesh);
     csMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.213), new THREE.MeshBasicMaterial({ map: csTex, toneMapped: false }));
     csMesh.position.set(1.1, 0.9, 0.12); csMesh.rotation.set(-0.15, -Math.PI / 2 + 0.2, 0); car.add(csMesh);
+    // đèn viền nội thất tím/xanh dọc mép táp-lô và hai bên
+    const led = (c) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false });
+    [[1.14, 1.0, 0, 0.012, 0.012, 1.4, "#7a5cff"], [1.14, 0.86, 0, 0.012, 0.01, 1.4, "#3aa0ff"]].forEach(([x, y, z, sx, sy, sz, c]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), led(c)); m.position.set(x, y, z); car.add(m); });
     drawCluster(); drawHud(); drawCenter();
   }
   S.onFrame((dt, t) => { scene.environmentIntensity = cab.on ? 1.7 : 0.9; scene.background = cab.on ? skyTex : darkBg; if (!cab.on) return; cab.t = t; drawCluster(); drawHud(); drawCenter(); });
@@ -178,12 +200,13 @@ export function createScene(canvas, opt = {}) {
     /** chế độ ngồi trong buồng lái: speed 0..260, yaw/pitch (rad) do người xem rê chuột */
     cockpit(speed, yaw, pitch, view = 1) {
       cab.on = true; cab.speed = speed; st.scroll = 2; S.controls.enabled = false;
+      // 0 = toàn cảnh khoang lái nhìn từ giữa (rộng, đối xứng như ảnh quảng cáo), 1 = ngồi sau vô-lăng
       const e = view * view * (3 - 2 * view);
-      const pA = new THREE.Vector3(0.45, 1.12, 0.5), pB = new THREE.Vector3(0.18 + yaw * 0.04, 1.16 + pitch * 0.02, DRIVER_Z);
+      const pA = new THREE.Vector3(0.3 + yaw * 0.05, 1.14, 0), pB = new THREE.Vector3(0.18 + yaw * 0.04, 1.16 + pitch * 0.02, DRIVER_Z);
       cam.position.lerpVectors(pA, pB, e);
       const dir = new THREE.Vector3(Math.cos(yaw) * Math.cos(pitch), -0.13 + Math.sin(pitch), Math.sin(yaw) * Math.cos(pitch)).normalize();
-      const tB = pB.clone().addScaledVector(dir, 3), tA = new THREE.Vector3(1.0, 0.98, -0.2);
-      tgt.lerpVectors(tA, tB, e); cam.fov = lerp(52, 58, e); cam.updateProjectionMatrix(); cam.lookAt(tgt);
+      const tB = pB.clone().addScaledVector(dir, 3), tA = new THREE.Vector3(3, 0.93 + pitch * 0.5, yaw * 1.2);
+      tgt.lerpVectors(tA, tB, e); cam.fov = lerp(92, 58, e); cam.updateProjectionMatrix(); cam.lookAt(tgt);
     },
     cockpitOff() { cab.on = false; },
     debug(c) { st.scroll = 1; S.controls.enabled = false; cam.position.set(c[0], c[1], c[2]); tgt.set(c[3], c[4], c[5]); cam.lookAt(tgt); cam.fov = c[6] || 27; cam.updateProjectionMatrix(); },
