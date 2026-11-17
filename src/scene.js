@@ -203,10 +203,10 @@ export function createScene(canvas, opt = {}) {
       cab.on = true; cab.speed = speed; st.scroll = 2; S.controls.enabled = false;
       // 0 = toàn cảnh khoang lái nhìn từ giữa (rộng, đối xứng như ảnh quảng cáo), 1 = ngồi sau vô-lăng
       const e = view * view * (3 - 2 * view);
-      const pA = new THREE.Vector3(0.3 + yaw * 0.05, 1.14, 0), pB = new THREE.Vector3(0.18 + yaw * 0.04, 1.16 + pitch * 0.02, DRIVER_Z);
+      const pA = new THREE.Vector3(0.1 + yaw * 0.05, 1.26, 0), pB = new THREE.Vector3(0.18 + yaw * 0.04, 1.16 + pitch * 0.02, DRIVER_Z);
       cam.position.lerpVectors(pA, pB, e);
       const dir = new THREE.Vector3(Math.cos(yaw) * Math.cos(pitch), -0.13 + Math.sin(pitch), Math.sin(yaw) * Math.cos(pitch)).normalize();
-      const tB = pB.clone().addScaledVector(dir, 3), tA = new THREE.Vector3(3, 0.74 + pitch * 0.5, yaw * 1.2);
+      const tB = pB.clone().addScaledVector(dir, 3), tA = new THREE.Vector3(3, 0.78 + pitch * 0.5, yaw * 1.2);
       tgt.lerpVectors(tA, tB, e); cam.fov = lerp(100, 58, e); cam.updateProjectionMatrix(); cam.lookAt(tgt);
     },
     cockpitOff() { if (cab.on) { cab.on = false; S.noOffset = false; S.fit(); } },
