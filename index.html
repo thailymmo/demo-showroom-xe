@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AXIOM One — Xe điện hiệu suất cao</title>
+<meta name="description" content="AXIOM One: xe điện 640 mã lực, 620 km một lần sạc. Xoay quanh xe 3D, chọn màu sơn và đặt lái thử.">
+<meta name="theme-color" content="#06070a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2306070a'/%3E%3Cpath d='M4 24L16 6l12 18h-5L16 13 9 24z' fill='%23ff3b3b'/%3E%3C/svg%3E">
+<script type="module" src="/src/main.js"></script>
+</head>
+<body>
+<canvas id="car" aria-label="Xe AXIOM One 3D"></canvas>
+<header class="hd"><a class="lg" href="#top"><i></i>AXIOM</a><nav><a href="#vong">Quanh xe</a><a href="#so">Thông số</a><a href="#noi-that">Chi tiết</a><a href="#lai-thu">Lái thử</a></nav><a class="cta" href="#lai-thu">Đặt lái thử</a></header>
+
+<main id="top">
+<section class="hero">
+  <h1 class="ghost" aria-hidden="true">AXIOM</h1>
+  <div class="hl"><p class="eb">AXIOM ONE · XE ĐIỆN THUẦN</p><h2>Sinh ra<br>để <em>lao đi.</em></h2><p class="sub">640 mã lực, 620 km một lần sạc. Thiết kế dựng từ gió, không từ catalogue.</p><a class="btn" href="#vong">Đi một vòng quanh xe ↓</a></div>
+  <div class="rail" id="rail" role="radiogroup" aria-label="Màu sơn">
+    <span>MÀU SƠN</span>
+    <button class="on" data-v="rouge" style="--c:#b3121f" title="Đỏ Rouge" role="radio"></button>
+    <button data-v="pearl" style="--c:#ecebe6" title="Trắng Ngọc Trai" role="radio"></button>
+    <button data-v="midnight" style="--c:#10131a" title="Đen Midnight" role="radio"></button>
+    <button data-v="blue" style="--c:#1f4fd8" title="Xanh Racing" role="radio"></button>
+    <button data-v="sage" style="--c:#6a7d62" title="Xanh Sage" role="radio"></button>
+    <button data-v="copper" style="--c:#b0663a" title="Đồng Copper" role="radio"></button>
+    <b id="pn">Đỏ Rouge</b>
+  </div>
+  <div class="rib"><div><b data-n="3.4" data-d="1">0</b><span>giây 0–100 km/h</span></div><div><b data-n="620">0</b><span>km mỗi lần sạc</span></div><div><b data-n="640">0</b><span>mã lực</span></div><div><b data-n="18">0</b><span>phút sạc 10–80%</span></div></div>
+</section>
+
+<section class="walk" id="vong">
+  <div class="pinw">
+    <div class="wc" data-i="0"><span>01 / 04</span><h3>Dấu ấn<br>ánh sáng.</h3><p>Một dải LED liền mạch chạy ngang đầu xe, vừa là đèn pha vừa là chữ ký thương hiệu.</p></div>
+    <div class="wc r" data-i="1"><span>02 / 04</span><h3>Mái kính<br>toàn cảnh.</h3><p>Đường mái kéo dài tới đuôi xe, giảm lực cản xuống 0,21 Cd, thêm 40 km quãng đường.</p></div>
+    <div class="wc" data-i="2"><span>03 / 04</span><h3>Đuôi xe<br>một nét.</h3><p>Đèn hậu một dải đỏ liền, khuếch tán gió ở cản sau, ổn định khi chạy trên 200 km/h.</p></div>
+    <div class="wc r" data-i="3"><span>04 / 04</span><h3>Mâm 21”<br>đúc liền.</h3><p>Mâm hợp kim rèn, phanh gốm tuỳ chọn, lốp 275/35 cho độ bám thể thao.</p></div>
+    <div class="wbar"><i></i></div>
+  </div>
+</section>
+
+<section class="specs" id="so">
+  <p class="eb">THÔNG SỐ</p><h2>Những con số<br>không cần tô vẽ.</h2>
+  <div class="sg">
+    <div><b>2×</b><span>Hai động cơ điện, dẫn động bốn bánh</span></div><div><b>800 V</b><span>Kiến trúc điện áp cao, sạc nhanh 270 kW</span></div>
+    <div><b>1.050 Nm</b><span>Mô-men xoắn cực đại, có ngay từ vòng quay đầu</span></div><div><b>5 sao</b><span>An toàn Euro NCAP, 14 túi khí, 9 camera</span></div>
+  </div>
+</section>
+
+<section class="hz" id="noi-that">
+  <div class="hzp"><h2 class="hzt">CHI TIẾT</h2>
+    <div class="hzr" id="hzr"></div></div>
+</section>
+
+<section class="drive" id="lai-thu">
+  <div class="cfg"><p class="eb">CẤU HÌNH CỦA BẠN</p><h2>AXIOM One<br><em id="cn">Đỏ Rouge</em></h2>
+    <div class="opt"><span>Mâm</span><div id="whl"><button class="on" data-p="0">19” tiêu chuẩn</button><button data-p="48">21” rèn · +48 triệu</button></div></div>
+    <div class="opt"><span>Pin</span><div id="bat"><button class="on" data-p="0">Tầm xa 620 km</button><button data-p="85">Tầm xa+ 700 km · +85 triệu</button></div></div>
+    <div class="price"><span>GIÁ THAM KHẢO</span><b id="pr">2.190 triệu</b></div></div>
+  <form class="fm" onsubmit="event.preventDefault();this.querySelector('button').textContent='ĐÃ ĐẶT LỊCH LÁI THỬ ✓'"><h3>Đặt lái thử</h3><input required placeholder="Họ tên"><input required placeholder="Số điện thoại" inputmode="tel"><select><option>Showroom Hà Nội</option><option>Showroom TP.HCM</option><option>Showroom Đà Nẵng</option></select><button>Đặt lịch →</button></form>
+</section>
+</main>
+<footer class="ft"><span>© 2026 AXIOM — trang mẫu do TLHUB thiết kế · hình minh hoạ</span><span>Hotline 1900 0000</span></footer>
+</body>
+</html>
