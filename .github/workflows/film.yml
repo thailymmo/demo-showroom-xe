@@ -5,7 +5,7 @@ name: Quay video trang web
 on:
   workflow_dispatch:
     inputs:
-      shards:  { description: "Số job chạy song song (tối đa 20)", default: "20" }
+      shards:  { description: "Số phần chia (tối đa 256, GitHub chạy 20 cái một lúc)", default: "20" }
       width:   { description: "Chiều rộng khung", default: "1440" }
       height:  { description: "Chiều cao khung", default: "810" }
       fps:     { description: "Số khung/giây gốc (video nội suy lên 30)", default: "6" }
@@ -57,11 +57,12 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - uses: actions/download-artifact@v4
         with: { pattern: "frames-*", path: all, merge-multiple: true }
-      - name: Ghép video (nâng 1080p, nội suy 30 khung/giây)
+      - name: Ghép video (1080p; dưới 30 khung/giây thì nội suy lên 30, từ 30 trở lên giữ nguyên khung)
         run: |
           ls all | wc -l
-          ffmpeg -y -loglevel error -framerate ${{ inputs.fps }} -i all/%04d.jpg \
-            -vf "scale=1920:1080:flags=lanczos,minterpolate=fps=30:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,format=yuv420p" \
+          if [ "${{ inputs.fps }}" -ge 30 ]; then VF="scale=1920:1080:flags=lanczos,format=yuv420p"
+          else VF="scale=1920:1080:flags=lanczos,minterpolate=fps=30:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,format=yuv420p"; fi
+          ffmpeg -y -loglevel error -framerate ${{ inputs.fps }} -i all/%04d.jpg -vf "$VF" \
             -c:v libx264 -preset slow -crf 18 -movflags +faststart -an axiom-website.mp4
       - uses: actions/upload-artifact@v4
         with: { name: axiom-website-video, path: axiom-website.mp4, retention-days: 7 }
