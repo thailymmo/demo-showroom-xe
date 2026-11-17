@@ -199,7 +199,7 @@ export function createScene(canvas, opt = {}) {
     },
     /** chế độ ngồi trong buồng lái: speed 0..260, yaw/pitch (rad) do người xem rê chuột */
     cockpit(speed, yaw, pitch, view = 1) {
-      if (!cab.on) { S.noOffset = true; S.fit(); }
+      if (!cab.on) { S.noOffset = true; S.fit(); const c = S.controls; c.minDistance = 0.01; c.maxDistance = 999; c.minPolarAngle = 0; c.maxPolarAngle = Math.PI; }
       cab.on = true; cab.speed = speed; st.scroll = 2; S.controls.enabled = false;
       // 0 = toàn cảnh khoang lái nhìn từ giữa (rộng, đối xứng như ảnh quảng cáo), 1 = ngồi sau vô-lăng
       const e = view * view * (3 - 2 * view);
@@ -209,7 +209,7 @@ export function createScene(canvas, opt = {}) {
       const tB = pB.clone().addScaledVector(dir, 3), tA = new THREE.Vector3(3, 0.85 + pitch * 0.5, -0.2 + yaw * 1.2);
       tgt.lerpVectors(tA, tB, e); cam.fov = lerp(70, 58, e); cam.updateProjectionMatrix(); cam.lookAt(tgt);
     },
-    cockpitOff() { if (cab.on) { cab.on = false; S.noOffset = false; S.fit(); } },
+    cockpitOff() { if (cab.on) { cab.on = false; S.noOffset = false; S.fit(); const c = S.controls; c.minDistance = 4; c.maxDistance = 16; c.minPolarAngle = 0.9; c.maxPolarAngle = 1.56; } },
     debug(c) { st.scroll = 1; S.controls.enabled = false; cam.position.set(c[0], c[1], c[2]); tgt.set(c[3], c[4], c[5]); cam.lookAt(tgt); cam.fov = c[6] || 27; cam.updateProjectionMatrix(); },
     setProgress(p) {
       st.scroll = p; S.controls.enabled = false;

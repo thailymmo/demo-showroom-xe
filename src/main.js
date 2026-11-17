@@ -98,8 +98,14 @@ fetch("/ai/manifest.json").then((r) => (r.ok ? r.json() : null)).catch(() => nul
   const sec = $(".cab"); if (!sec) return;
   let cabP = 0, active = false, sp = 0, yawT = 0, pitchT = 0, yaw = 0, pitch = 0;
   addEventListener("pointermove", (e) => { yawT = ((e.clientX / innerWidth) - 0.5) * 0.9; pitchT = -((e.clientY / innerHeight) - 0.5) * 0.35; });
-  const v = $("#cabv");
-  ScrollTrigger.create({ trigger: ".cab", start: "top top", end: "bottom bottom", onToggle: (st) => { active = st.isActive; if (active) mode = "cab"; else { mode = "hero"; car.cockpitOff(); } }, onUpdate: (st) => { const p = st.progress; cabP = p; sp = Math.round(Math.min(1, p * 1.15) ** 1.4 * 240); v.textContent = sp; } });
+  const v = $("#cabv"), ph = $("#cabimg"), phs = $$("#cabimg img");
+  const sstep = (a, b, x) => { x = Math.min(1, Math.max(0, (x - a) / (b - a))); return x * x * (3 - 2 * x); };
+  // ảnh AI mờ dần (0.22 → 0.42) để lộ khoang lái 3D; chữ số tốc độ chỉ hiện khi vào 3D
+  const photo = (p) => { const o = 1 - sstep(0.22, 0.42, p); ph.style.opacity = o; ph.style.pointerEvents = o > 0.05 ? "auto" : "none"; phs.forEach((im) => (im.style.transform = `scale(${1 + 0.05 * p / 0.4}) translate(${yawS * -14}px, ${pitS * 10}px)`)); $(".cabs").style.opacity = sstep(0.38, 0.55, p); };
+  let yawS = 0, pitS = 0;
+  addEventListener("pointermove", (e) => { yawS = (e.clientX / innerWidth - 0.5) * 2; pitS = (e.clientY / innerHeight - 0.5) * 2; });
+  $$(".cabtabs button").forEach((b) => b.addEventListener("click", () => { $$(".cabtabs button").forEach((x) => x.classList.toggle("on", x === b)); phs.forEach((im, i) => im.classList.toggle("on", i === +b.dataset.i)); }));
+  ScrollTrigger.create({ trigger: ".cab", start: "top top", end: "bottom bottom", onToggle: (st) => { active = st.isActive; if (active) mode = "cab"; else { mode = "hero"; car.cockpitOff(); } }, onUpdate: (st) => { const p = st.progress; cabP = p; photo(p); sp = Math.round(Math.min(1, p * 1.15) ** 1.4 * 240); v.textContent = sp; } });
   car.onFrame((dt) => { if (!active) return; yaw += (yawT - yaw) * Math.min(1, dt * 4); pitch += (pitchT - pitch) * Math.min(1, dt * 4); car.cockpit(sp, yaw, pitch, Math.min(1, Math.max(0, (cabP - 0.12) * 2.4))); });
 })();
 

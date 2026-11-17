@@ -128,3 +128,14 @@ main{position:relative;z-index:1}
 .drvp::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#06070acc,transparent 55%),linear-gradient(transparent 60%,#06070a99);pointer-events:none}
 .drvl{position:absolute;z-index:2;left:clamp(20px,4vw,64px);bottom:clamp(20px,5vw,64px);max-width:min(430px,70%)}
 .drvl h2{font-size:clamp(32px,4.4vw,70px);line-height:.95;margin:12px 0 12px;text-transform:uppercase}.drvl p:last-child{color:#cfd3da;font-size:15px}
+
+/* ảnh khoang lái toàn cảnh (AI) mở đầu mục buồng lái, mờ dần để lộ khoang lái 3D */
+.cabimg{position:absolute;inset:0;z-index:0;overflow:hidden;background:#06070a}
+.cabimg img{position:absolute;inset:-3%;width:106%;height:106%;object-fit:cover;opacity:0;transition:opacity .9s;will-change:transform}
+.cabimg img.on{opacity:1}
+.cabcap{position:absolute;right:clamp(18px,4vw,56px);top:84px;font:500 11px var(--f-b);letter-spacing:.18em;text-transform:uppercase;color:#ffffffb0;text-shadow:0 1px 12px #000}
+.cabtabs{position:absolute;left:50%;bottom:7vh;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}
+.cabtabs button{font:600 12px var(--f-b);letter-spacing:.14em;text-transform:uppercase;padding:10px 18px;border:1px solid #ffffff66;background:#06070a99;color:#fff;cursor:pointer;backdrop-filter:blur(6px);transition:.25s}
+.cabtabs button.on{background:#fff;color:#06070a}
+.cabimg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#06070aa8 0%,transparent 45%),linear-gradient(transparent 55%,#06070acc);pointer-events:none}
+.cabl,.cabs,.cabh{z-index:2}
