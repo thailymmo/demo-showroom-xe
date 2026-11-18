@@ -17,7 +17,19 @@ if (!reduce && !new URLSearchParams(location.search).has("film")) {
   gsap.ticker.lagSmoothing(0);
   $$('a[href^="#"]').forEach((a) => a.addEventListener("click", (e) => { const t = $(a.getAttribute("href")); if (t) { e.preventDefault(); lenis.scrollTo(t, { duration: 1.6 }); } }));
 }
-const car = createScene($("#car"));
+// 3D chạy được → dùng; không có WebGL hoặc máy quá yếu → ảnh tĩnh + nút "Xem 3D" (cảnh giả lặng lẽ không làm gì)
+const noop = () => {};
+const stub = new Proxy(noop, { get: (_, k) => (k === "ready" ? new Promise(noop) : k === "camera" ? { position: { set: noop }, lookAt: noop } : k === "controls" ? { target: { set: noop } } : noop), apply: noop });
+const webgl = (() => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; } })();
+let car = null;
+if (webgl) { try { car = createScene($("#car")); } catch (e) { console.warn("3D không khởi động được", e); } }
+if (!car) { car = stub; document.body.classList.add("no3d", "no-webgl"); }
+else {
+  if (new URLSearchParams(location.search).has("dbg")) window.__axiomQ = car;
+  car.onWeak = () => document.body.classList.add("no3d");
+  const bt = $("#v3d");
+  if (bt) bt.addEventListener("click", () => { car.autoQuality = false; car.setQuality(4); document.body.classList.remove("no3d"); car.resume(); });
+}
 car.ready.then(() => { if (new URLSearchParams(location.search).has("film")) { window.__dbg = true; window.__axiom = car; } document.body.classList.add("car-ready"); car.setOption("paint", "rouge"); const q = new URLSearchParams(location.search).get("cam"); if (q) { window.__dbg = true; car.debug(q.split(",").map(Number)); } });
 const ACC = { rouge: ["#ff3b3b", "Đỏ Rouge"], pearl: ["#e8e8e0", "Trắng Ngọc Trai"], midnight: ["#7c8cff", "Đen Midnight"], blue: ["#4f86ff", "Xanh Racing"], sage: ["#9ec58f", "Xanh Sage"], copper: ["#ff9b5e", "Đồng Copper"] };
 $("#rail").addEventListener("click", (e) => {

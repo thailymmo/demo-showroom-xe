@@ -9,7 +9,7 @@ export function createAiViewer(canvas) {
   const { scene, renderer } = S;
   renderer.toneMappingExposure = 1.1;
   const pm = new THREE.PMREMGenerator(renderer);
-  new RGBELoader().loadAsync("/hdr/photo_studio_loft_hall_1k.hdr").then((t) => { scene.environment = pm.fromEquirectangular(t).texture; t.dispose(); });
+  new RGBELoader().loadAsync("/hdr/photo_studio_loft_hall_1k.hdr").then((t) => { scene.environment = pm.fromEquirectangular(t).texture; t.dispose(); S.invalidate(200); });
   scene.add(new THREE.HemisphereLight("#ffffff", "#223", 0.5));
   const mat = new THREE.MeshPhysicalMaterial({ color: "#c9ced8", metalness: 0.9, roughness: 0.22, clearcoat: 0.6 });
   const grid = new THREE.GridHelper(14, 28, "#3a4560", "#1e2638"); grid.position.y = 0; scene.add(grid);
@@ -24,6 +24,7 @@ export function createAiViewer(canvas) {
     if (cur) scene.remove(cur);
     g.scale.multiplyScalar(0.01); scene.add(g); cur = g;
     gsap.to(g.scale, { x: g.scale.x * 100, y: g.scale.y * 100, z: g.scale.z * 100, duration: 0.9, ease: "back.out(1.4)" });
+    S.invalidate(1200);
   };
   return S;
 }

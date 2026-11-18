@@ -50,7 +50,14 @@ export function createStage(canvas, opt = {}) {
     idle: opt.idle ?? 0.0016,
     spin: 0,
   };
-  let running = true, last = 0, idle = 0;
+  let running = true, last = 0, idle = 0, until = 0, lastSig = "", prevDrew = false;
+  const ft = []; // thời gian giữa các khung liên tiếp thật sự có vẽ (ms), để tự hạ chất lượng
+  api.invalidate = (ms = 150) => { until = Math.max(until, performance.now() + ms); }; // vẽ liên tục trong ms mili-giây tới
+  api.live = false; // đặt true (hoặc hàm) khi cảnh đang có hoạt hình liên tục
+  api.setDpr = (v) => { renderer.setPixelRatio(Math.min(devicePixelRatio, v)); fit(); };
+  api.frameTimes = ft;
+  api.stop = () => { running = false; };
+  api.resume = () => { if (!running) { running = true; last = performance.now(); api.invalidate(150); prevDrew = false; requestAnimationFrame(tick); } };
   const fit = () => {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
@@ -61,6 +68,7 @@ export function createStage(canvas, opt = {}) {
     const o = opt.offset || [-0.235, 0.02];
     if (w / h > 1.25 && !api.noOffset) camera.setViewOffset(w, h, o[0] * w, o[1] * h, w, h); else camera.clearViewOffset();
     camera.updateProjectionMatrix();
+    api.invalidate(150);
   };
   api.fit = fit;
   new ResizeObserver(fit).observe(canvas);
@@ -80,10 +88,20 @@ export function createStage(canvas, opt = {}) {
     }
     hooks.forEach((f) => f(dt, t / 1000));
     controls.update();
-    if (api.composer) api.composer.render(); else renderer.render(scene, camera);
+    const p = camera.position, q = camera.quaternion, v = camera.view;
+    const sig = `${p.x.toFixed(4)},${p.y.toFixed(4)},${p.z.toFixed(4)},${q.x.toFixed(5)},${q.y.toFixed(5)},${q.z.toFixed(5)},${q.w.toFixed(5)},${camera.fov},${camera.zoom},${v && v.enabled ? v.offsetX + "," + v.offsetY : ""}`;
+    const live = typeof api.live === "function" ? api.live() : api.live;
+    const why = t < until ? "dirty" : live ? "live" : sig !== lastSig ? "sig" : "";
+    if (why) {
+      (api.why ||= {})[why] = (api.why[why] || 0) + 1;
+      if (api.composer) api.composer.render(); else renderer.render(scene, camera);
+      lastSig = sig;
+      if (prevDrew && !document.hidden) { ft.push(dt * 1000); if (ft.length > 240) ft.shift(); }
+      prevDrew = true;
+    } else prevDrew = false;
     requestAnimationFrame(tick);
   };
-  new IntersectionObserver(([e]) => { const was = running; running = e.isIntersecting; if (running && !was) { last = performance.now(); requestAnimationFrame(tick); } }).observe(canvas);
+  new IntersectionObserver(([e]) => { const was = running; running = e.isIntersecting; if (running && !was) { last = performance.now(); api.invalidate(150); prevDrew = false; requestAnimationFrame(tick); } }).observe(canvas);
   requestAnimationFrame(tick);
   /** vật liệu nhanh */
   api.M = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0, ...o });

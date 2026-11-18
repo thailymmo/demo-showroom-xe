@@ -21,7 +21,7 @@ export function createScene(canvas, opt = {}) {
   scene.environmentIntensity = 0.9;
   scene.background = new THREE.Color('#06070a');
   const pm = new THREE.PMREMGenerator(renderer);
-  const envReady = new RGBELoader().loadAsync("/hdr/photo_studio_loft_hall_1k.hdr").then((t) => { scene.environment = pm.fromEquirectangular(t).texture; t.dispose(); });
+  const envReady = new RGBELoader().loadAsync("/hdr/photo_studio_loft_hall_1k.hdr").then((t) => { scene.environment = pm.fromEquirectangular(t).texture; t.dispose(); S.invalidate(200); });
 
   // ánh sáng
   const key = new THREE.SpotLight("#ffffff", 110, 40, 0.5, 0.9, 1.5); key.position.set(2, 10, 6); key.target.position.set(0, 0.4, 0); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0003; scene.add(key, key.target);
@@ -169,7 +169,9 @@ export function createScene(canvas, opt = {}) {
     [[1.14, 1.0, 0, 0.012, 0.012, 1.4, "#7a5cff"], [1.14, 0.86, 0, 0.012, 0.01, 1.4, "#3aa0ff"]].forEach(([x, y, z, sx, sy, sz, c]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), led(c)); m.position.set(x, y, z); car.add(m); });
     drawCluster(); drawHud(); drawCenter();
   }
-  S.onFrame((dt, t) => { scene.environmentIntensity = cab.on ? 1.7 : 0.9; scene.background = cab.on ? skyTex : darkBg; if (!cab.on) return; cab.t = t; drawCluster(); drawHud(); drawCenter(); });
+  let cabWas = false;
+  S.live = () => cab.on;
+  S.onFrame((dt, t) => { if (cab.on !== cabWas) { cabWas = cab.on; S.invalidate(300); } scene.environmentIntensity = cab.on ? 1.7 : 0.9; scene.background = cab.on ? skyTex : darkBg; if (!cab.on) return; cab.t = t; drawCluster(); drawHud(); drawCenter(); });
 
   // hậu kỳ
   const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: 4 }));
@@ -182,13 +184,41 @@ export function createScene(canvas, opt = {}) {
   if (new URLSearchParams(location.search).has("lite")) { gtao.enabled = false; bloomPass.enabled = false; }
   composer.addPass(new OutputPass());
   S.composer = composer;
+  // ── chất lượng theo bậc: 0 đầy đủ → 1 bỏ sàn gương → 2 bỏ AO → 3 bỏ bloom → 4 pixel ratio 1 → 5 ảnh tĩnh
+  const lite = new URLSearchParams(location.search).has("lite"), film = new URLSearchParams(location.search).has("film");
+  const baseDpr = opt.maxDpr || 2;
+  S.quality = 0;
+  S.setQuality = (lv) => {
+    S.quality = lv;
+    mirror.visible = lv < 1;
+    gtao.enabled = lv < 2 && !lite;
+    bloomPass.enabled = lv < 3 && !lite;
+    S.setDpr(lv >= 4 ? 1 : baseDpr);
+    if (lv >= 5) { S.stop(); S.onWeak?.(); } else S.invalidate(200);
+  };
+  // máy yếu (điện thoại, ít nhân, ít RAM) vào thẳng bậc 2; các máy khác bắt đầu đầy đủ
+  const weak = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 || (matchMedia("(pointer:coarse)").matches && innerWidth < 900);
+  if (!film && !lite && weak) S.setQuality(2);
+  // đo tốc độ khung hình SAU khi nạp xong vài giây (tránh nhầm với lúc đang tải và biên dịch shader), rồi hạ dần
+  S.autoQuality = !film && !lite;
+  Promise.all([envReady, carReady]).then(() => setTimeout(() => {
+    const iv = setInterval(() => {
+      if (!S.autoQuality || document.hidden) return;
+      const a = S.frameTimes; if (a.length < 90) return;
+      const m = [...a].sort((x, y) => x - y)[a.length >> 1]; a.length = 0;
+      if (S.quality >= 4 && m > 50) S.setQuality(5);          // dưới ~20 khung/giây dù đã tắt hết
+      else if (S.quality < 4 && m > 28) S.setQuality(S.quality + 1); // dưới ~36 khung/giây
+      if (S.quality >= 5) clearInterval(iv);
+    }, 2500);
+  }, 4000));
+
 
   const st = { scroll: null };
   const cam = S.camera, tgt = S.controls.target;
   const place = (ang, rad, h, lookY = 0.55) => { cam.position.set(Math.cos(ang) * rad, h, Math.sin(ang) * rad); tgt.set(0, lookY, 0); cam.lookAt(tgt); };
   S.THREE = THREE;
   const api = Object.assign(S, {
-    ready: Promise.all([envReady, carReady]),
+    ready: Promise.all([envReady, carReady]).then(() => { S.invalidate(300); }),
     setOption(k, v) {
       if (k === "paint") {
         const c = new THREE.Color(PAINTS[v]);
@@ -196,6 +226,7 @@ export function createScene(canvas, opt = {}) {
         paintMats.concat(paint2).forEach((m) => m.normalScale && m.normalScale.set(0.12, 0.12));
         const d = c.clone().multiplyScalar(0.35); paint2.forEach((m) => gsap.to(m.color, { r: d.r, g: d.g, b: d.b, duration: 0.7 }));
         warm.color.copy(c.clone().lerp(new THREE.Color("#ff7a50"), 0.5));
+        S.invalidate(900);
       }
     },
     /** chế độ ngồi trong buồng lái: speed 0..260, yaw/pitch (rad) do người xem rê chuột */
